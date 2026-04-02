@@ -1,0 +1,46 @@
+name: "Maven: Test & Build"
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      skipTest:
+        description: "Skip unit and integration tests (maps to -Dmaven.test.skip)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: "Maven: Test & Build"
+    runs-on: ubuntu-latest
+    env:
+      # For push/PR events, github.event.inputs is empty. These fall back to sensible defaults.
+      SKIP_TEST: ${{ github.event.inputs.skipTest || 'false' }}
+
+    steps:
+      - name: Checkout backend repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Show Maven version
+        run: mvn --version
+
+      - name: "Test: Unit&Integration"
+        run: |
+          mvn clean test -Dmaven.test.skip=${SKIP_TEST}
+
+      - name: Build
+        run: mvn package -Dmaven.test.skip=true
