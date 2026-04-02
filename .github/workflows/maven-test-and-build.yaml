@@ -12,12 +12,22 @@ on:
         type: boolean
         required: false
         default: false
+      runLearningJob:
+        description: "Run the learning/demo job"
+        type: boolean
+        required: false
+        default: true
+      runLearningStep:
+        description: "Run a specific step inside the learning job"
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
 
 env:
-  JAVA_VERSION: "25"   # 全局变量，统一管理 JDK 版本
+  JAVA_VERSION: "25"
 
 jobs:
   test:
@@ -61,3 +71,31 @@ jobs:
 
       - name: Build
         run: mvn package -Dmaven.test.skip=true
+
+  # 新增：学习/测试 GitHub Actions 功能的 job
+  learning:
+    name: "Learning: Test GitHub Actions features"
+    runs-on: ubuntu-latest
+    # 控制整个 job 是否执行：仅当手动触发且未勾选 runLearningJob 时跳过，其他情况默认执行
+    if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.runLearningJob == 'false') }}
+    steps:
+      - name: Step 1 - Print event name
+        run: echo "Event name is ${{ github.event_name }}"
+
+      - name: Step 2 - Print runner OS
+        run: echo "Running on ${{ runner.os }}"
+
+      - name: Step 3 - Show GitHub context
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+
+      - name: Step 4 - Conditional step (controlled by input)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.runLearningStep == 'false') }}
+        run: |
+          echo "This step is controlled by 'runLearningStep' input."
+          echo "It runs by default, and can be disabled by unchecking that box in workflow_dispatch."
+
+      - name: Step 5 - Always run (no condition)
+        run: echo "This step always runs if the job is executed."
