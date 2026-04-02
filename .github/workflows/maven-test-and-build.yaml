@@ -16,14 +16,13 @@ on:
 permissions:
   contents: read
 
-jobs:
-  test-and-build:
-    name: "Maven: Test & Build"
-    runs-on: ubuntu-latest
-    env:
-      # For push/PR events, github.event.inputs is empty. These fall back to sensible defaults.
-      SKIP_TEST: ${{ github.event.inputs.skipTest || 'false' }}
+env:
+  JAVA_VERSION: "25"   # 全局变量，统一管理 JDK 版本
 
+jobs:
+  test:
+    name: "Run tests"
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout backend repository
         uses: actions/checkout@v6
@@ -32,16 +31,33 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
       - name: Show Maven version
         run: mvn --version
 
-      - name: "Test: Unit&Integration"
-        if: ${{ env.SKIP_TEST != 'true' }}
-        run: |
-          mvn clean test
+      - name: "Test: Unit & Integration"
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skipTest == 'true') }}
+        run: mvn clean test
+
+  build:
+    name: "Build package"
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout backend repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Show Maven version
+        run: mvn --version
 
       - name: Build
         run: mvn package -Dmaven.test.skip=true
