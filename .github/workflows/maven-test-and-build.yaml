@@ -39,8 +39,9 @@ jobs:
         run: mvn --version
 
       - name: "Test: Unit&Integration"
+        if: ${{ env.SKIP_TEST != 'true' }}
         run: |
-          mvn clean test -Dmaven.test.skip=${SKIP_TEST}
+          mvn clean test
 
       - name: Build
         run: mvn package -Dmaven.test.skip=true
