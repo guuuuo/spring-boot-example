@@ -7,6 +7,7 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      # 原有 boolean 参数
       skipTest:
         description: "Skip unit and integration tests (maps to -Dmaven.test.skip)"
         type: boolean
@@ -22,6 +23,37 @@ on:
         type: boolean
         required: false
         default: true
+      
+      # 新增：string 类型
+      customString:
+        description: "A custom string input for demonstration"
+        type: string
+        required: false
+        default: "default-value"
+      
+      # 新增：choice 类型（下拉选项）
+      environmentChoice:
+        description: "Choose an environment (demo for choice type)"
+        type: choice
+        required: false
+        default: "dev"
+        options:
+          - dev
+          - staging
+          - production
+      
+      # 新增：number 类型
+      retryCount:
+        description: "Number of retries (demo for number type)"
+        type: number
+        required: false
+        default: 3
+      
+      # 新增：environment 类型（需要仓库中预先定义 environment）
+      deployEnv:
+        description: "Select GitHub Environment (must be pre-configured in repo)"
+        type: environment
+        required: false
 
 permissions:
   contents: read
@@ -72,11 +104,9 @@ jobs:
       - name: Build
         run: mvn package -Dmaven.test.skip=true
 
-  # 新增：学习/测试 GitHub Actions 功能的 job
   learning:
     name: "Learning: Test GitHub Actions features"
     runs-on: ubuntu-latest
-    # 控制整个 job 是否执行：仅当手动触发且未勾选 runLearningJob 时跳过，其他情况默认执行
     if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.runLearningJob == 'false') }}
     steps:
       - name: Step 1 - Print event name
@@ -91,11 +121,43 @@ jobs:
           echo "Ref: ${{ github.ref }}"
           echo "SHA: ${{ github.sha }}"
 
-      - name: Step 4 - Conditional step (controlled by input)
+      - name: Step 4 - Print all input parameter values (demo of string, choice, number, environment)
+        run: |
+          echo "=== workflow_dispatch input values ==="
+          echo "skipTest: ${{ github.event.inputs.skipTest }}"
+          echo "runLearningJob: ${{ github.event.inputs.runLearningJob }}"
+          echo "runLearningStep: ${{ github.event.inputs.runLearningStep }}"
+          echo "customString: ${{ github.event.inputs.customString }}"
+          echo "environmentChoice: ${{ github.event.inputs.environmentChoice }}"
+          echo "retryCount: ${{ github.event.inputs.retryCount }}"
+          echo "deployEnv: ${{ github.event.inputs.deployEnv }}"
+          echo "===================================="
+
+      - name: Step 5 - Conditional logic based on string input
+        if: ${{ github.event.inputs.customString == 'special' }}
+        run: |
+          echo "Custom string is 'special'! This step runs only when customString equals 'special'."
+
+      - name: Step 6 - Conditional logic based on choice input
+        if: ${{ github.event.inputs.environmentChoice == 'production' }}
+        run: |
+          echo "Environment choice is 'production' - you might want to be extra careful."
+
+      - name: Step 7 - Using number input in logic (compare > 5)
+        if: ${{ github.event.inputs.retryCount > 5 }}
+        run: |
+          echo "Retry count is greater than 5 (currently ${{ github.event.inputs.retryCount }})."
+
+      - name: Step 8 - Show environment input (if provided)
+        if: ${{ github.event.inputs.deployEnv != '' }}
+        run: |
+          echo "Deployment environment selected: ${{ github.event.inputs.deployEnv }}"
+
+      - name: Step 9 - Controlled by boolean runLearningStep
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.runLearningStep == 'false') }}
         run: |
-          echo "This step is controlled by 'runLearningStep' input."
-          echo "It runs by default, and can be disabled by unchecking that box in workflow_dispatch."
+          echo "This step is controlled by 'runLearningStep' boolean input."
+          echo "It runs by default, and can be disabled by unchecking that box."
 
-      - name: Step 5 - Always run (no condition)
-        run: echo "This step always runs if the job is executed."
+      - name: Step 10 - Always run (no condition)
+        run: echo "This step always runs if the learning job is executed."
