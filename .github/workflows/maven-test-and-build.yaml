@@ -7,7 +7,7 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      # 原有 boolean 参数
+      # boolean
       skipTest:
         description: "Skip unit and integration tests (maps to -Dmaven.test.skip)"
         type: boolean
@@ -24,14 +24,14 @@ on:
         required: false
         default: true
       
-      # 新增：string 类型
+      # string
       customString:
         description: "A custom string input for demonstration"
         type: string
         required: false
         default: "default-value"
       
-      # 新增：choice 类型（下拉选项）
+      # choice （drop down selector)
       environmentChoice:
         description: "Choose an environment (demo for choice type)"
         type: choice
@@ -42,14 +42,14 @@ on:
           - staging
           - production
       
-      # 新增：number 类型
+      # number
       retryCount:
         description: "Number of retries (demo for number type)"
         type: number
         required: false
         default: 3
       
-      # 新增：environment 类型（需要仓库中预先定义 environment）
+      # environment（Need to pre-define environment in repo's settings）
       deployEnv:
         description: "Select GitHub Environment (must be pre-configured in repo)"
         type: environment
